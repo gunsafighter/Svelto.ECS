@@ -12,13 +12,12 @@ namespace Svelto.ECS.Serialization
     }
 
     public class SerializableComponentBuilder<T> : ComponentBuilder<T>, ISerializableComponentBuilder
-        where T : unmanaged, IEntityComponent
+        where T : unmanaged, IBaseEntityComponent
     {
         public static readonly uint SIZE = (uint) MemoryUtilities.SizeOf<T>();
         
-          public void Serialize
-        (uint entityID, ITypeSafeDictionary dictionary, ISerializationData serializationData
-       , int serializationType)
+          public void Serialize(uint entityID, ITypeSafeDictionary dictionary, ISerializationData serializationData
+                              , int serializationType)
         {
             IComponentSerializer<T> componentSerializer = _serializers[serializationType];
 
@@ -32,13 +31,12 @@ namespace Svelto.ECS.Serialization
 
             serializationData.dataPos = (uint) serializationData.data.count;
 
-            serializationData.data.ExpandBy(componentSerializer.size);
+            serializationData.data.IncrementCountBy(componentSerializer.size);
             componentSerializer.SerializeSafe(val, serializationData);
         }
 
-        public void Deserialize
-        (uint entityID, ITypeSafeDictionary dictionary, ISerializationData serializationData
-       , int serializationType)
+        public void Deserialize(uint entityID, ITypeSafeDictionary dictionary, ISerializationData serializationData
+                              , int serializationType)
         {
             IComponentSerializer<T> componentSerializer = _serializers[(int) serializationType];
 
@@ -55,12 +53,17 @@ namespace Svelto.ECS.Serialization
         }
 
         public void Deserialize
-        (ISerializationData serializationData, in EntityComponentInitializer initializer
+        (ISerializationData serializationData, in EntityInitializer initializer
        , int serializationType)
         {
             IComponentSerializer<T> componentSerializer = _serializers[(int) serializationType];
 
-            componentSerializer.DeserializeSafe(ref initializer.GetOrCreate<T>(), serializationData);
+            componentSerializer.DeserializeSafe(ref initializer.GetOrAdd<T>(), serializationData);
+        }
+
+        public uint Size(int serializationType)
+        {
+            return _serializers[(int) serializationType].size;
         }
 
         public void Deserialize
@@ -74,7 +77,7 @@ namespace Svelto.ECS.Serialization
     }
     
     public class SerializableComponentBuilder<SerializationType, T> :  SerializableComponentBuilder<T> 
-        where T : unmanaged, IEntityComponent where SerializationType : Enum
+        where T : unmanaged, IBaseEntityComponent where SerializationType : Enum
     {
         static SerializableComponentBuilder() { }
 

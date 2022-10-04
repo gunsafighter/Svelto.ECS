@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
 using System.Threading;
 using Svelto.Common;
 
@@ -7,7 +6,7 @@ namespace Svelto.ECS.DataStructures
 {
     public struct SharedNativeInt: IDisposable
     {
-#if UNITY_NATIVE 
+#if UNITY_COLLECTIONS || (UNITY_JOBS || UNITY_BURST)
         [global::Unity.Collections.LowLevel.Unsafe.NativeDisableUnsafePtrRestriction]
 #endif
         unsafe int* data;
@@ -35,15 +34,15 @@ namespace Svelto.ECS.DataStructures
                 return current;
             }
         }
-        
+
         public static implicit operator int(SharedNativeInt t)
         {
             unsafe
             {
-#if DEBUG && !PROFILE_SVELTO                
-                if (t.data == null)               
+#if DEBUG && !PROFILE_SVELTO
+                if (t.data == null)
                     throw new Exception("using disposed SharedInt");
-#endif    
+#endif
                 return *t.data;
             }
         }
@@ -67,12 +66,12 @@ namespace Svelto.ECS.DataStructures
 #if DEBUG && !PROFILE_SVELTO
                 if (data == null)
                     throw new Exception("null-access");
-#endif            
-                
+#endif
+
                 return Interlocked.Decrement(ref *data);
             }
         }
-        
+
         public int Increment()
         {
             unsafe
@@ -80,12 +79,12 @@ namespace Svelto.ECS.DataStructures
 #if DEBUG && !PROFILE_SVELTO
                 if (data == null)
                     throw new Exception("null-access");
-#endif            
-                
+#endif
+
                 return Interlocked.Increment(ref *data);
             }
         }
-        
+
         public int Add(int val)
         {
             unsafe
@@ -93,12 +92,25 @@ namespace Svelto.ECS.DataStructures
 #if DEBUG && !PROFILE_SVELTO
                 if (data == null)
                     throw new Exception("null-access");
-#endif            
-                
+#endif
+
                 return Interlocked.Add(ref *data, val);
             }
         }
-        
+
+        public int CompareExchange(int value, int compare)
+        {
+            unsafe
+            {
+            #if DEBUG && !PROFILE_SVELTO
+                if (data == null)
+                    throw new Exception("null-access");
+            #endif
+
+                return Interlocked.CompareExchange(ref *data, value, compare);
+            }
+        }
+
         public void Set(int val)
         {
             unsafe
@@ -106,8 +118,8 @@ namespace Svelto.ECS.DataStructures
 #if DEBUG && !PROFILE_SVELTO
                 if (data == null)
                     throw new Exception("null-access");
-#endif            
-                
+#endif
+
                 Volatile.Write(ref *data, val);
             }
         }

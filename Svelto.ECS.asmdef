@@ -1,5 +1,6 @@
 {
     "name": "Svelto.ECS",
+    "rootNamespace": "",
     "references": [
         "Unity.Entities",
         "Unity.Collections",
@@ -17,6 +18,11 @@
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "2019.3",
+            "define": "UNITY_JOBS"
+        },
         {
             "name": "com.unity.entities",
             "expression": "",
@@ -48,9 +54,9 @@
             "define": "UNITY_NATIVE"
         },
         {
-            "name": "com.unity.jobs",
-            "expression": "",
-            "define": "UNITY_JOBS"
+            "name": "com.unity.entities",
+            "expression": "0.45",
+            "define": "UNITY_ECS_050"
         }
     ],
     "noEngineReferences": false

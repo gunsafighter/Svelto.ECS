@@ -1,6 +1,6 @@
 #if UNITY_5 || UNITY_5_3_OR_NEWER
+using System;
 using Object = UnityEngine.Object;
-using System.Collections;
 using UnityEngine;
 
 namespace Svelto.ECS.Schedulers.Unity
@@ -9,37 +9,9 @@ namespace Svelto.ECS.Schedulers.Unity
     //You can customize the scheduler if you wish
     public class UnityEntitiesSubmissionScheduler : EntitiesSubmissionScheduler
     {
-        class Scheduler : MonoBehaviour
-        {
-            public Scheduler()
-            {
-                _coroutine = Coroutine();
-            }
-
-            void Update()
-            {
-                _coroutine.MoveNext();
-            }
-            
-            IEnumerator Coroutine()
-            {
-                while (true)
-                {
-                    yield return _wait;
-                    
-                    onTick();
-                }
-            }
-
-            readonly WaitForEndOfFrame _wait = new WaitForEndOfFrame();
-            readonly IEnumerator       _coroutine;
-            
-            public System.Action onTick;
-        }
-
         public UnityEntitiesSubmissionScheduler(string name)
         {
-            _scheduler = new GameObject(name).AddComponent<Scheduler>();
+            _scheduler = new GameObject(name).AddComponent<MonoScheduler>();
             GameObject.DontDestroyOnLoad(_scheduler.gameObject);
             _scheduler.onTick = SubmitEntities;
         }
@@ -52,12 +24,20 @@ namespace Svelto.ECS.Schedulers.Unity
             }
         }
 
-        public override bool paused { get; set; }
-
         void SubmitEntities()
         {
-            if (paused == false)
-                _onTick.Invoke();
+            try
+            {
+                _onTick.SubmitEntities();
+            }
+            catch (Exception e)
+            {
+                paused = true;
+                
+                Svelto.Console.LogException(e);
+                
+                throw;
+            }
         }
 
         protected internal override EnginesRoot.EntitiesSubmitter onTick
@@ -65,7 +45,7 @@ namespace Svelto.ECS.Schedulers.Unity
             set => _onTick = value;
         }
 
-        readonly Scheduler       _scheduler;
+        readonly MonoScheduler        _scheduler;
         EnginesRoot.EntitiesSubmitter _onTick;
     }
 }

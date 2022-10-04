@@ -6,10 +6,10 @@ namespace Svelto.ECS
 {
     /// <summary>
     /// ToDo it would be interesting to have a version of this dedicated to unmanaged, IEntityComponent
-    /// that can be burstifiable 
+    /// that can be burstifiable
     /// </summary>
     /// <typeparam name="T1"></typeparam>
-    public readonly struct AllGroupsEnumerable<T1> where T1 : struct, IEntityComponent
+    public readonly struct AllGroupsEnumerable<T1> where T1 : struct, IBaseEntityComponent
     {
         public ref struct GroupCollection
         {
@@ -19,15 +19,12 @@ namespace Svelto.ECS
             public void Deconstruct(out EntityCollection<T1> collection, out ExclusiveGroupStruct group)
             {
                 collection = this.collection;
-                group = this.@group;
+                group      = this.@group;
             }
         }
-        
-        public AllGroupsEnumerable(EntitiesDB db)
-        {
-            _db = db;
-        }
-        
+
+        public AllGroupsEnumerable(EntitiesDB db) { _db = db; }
+
         public ref struct GroupsIterator
         {
             public GroupsIterator(EntitiesDB db) : this()
@@ -40,14 +37,17 @@ namespace Svelto.ECS
                 //attention, the while is necessary to skip empty groups
                 while (_db.MoveNext() == true)
                 {
-                    FasterDictionary<ExclusiveGroupStruct, ITypeSafeDictionary>.KeyValuePairFast group = _db.Current;
-                    ITypeSafeDictionary<T1> typeSafeDictionary = @group.Value as ITypeSafeDictionary<T1>;
-                    
-                    if (typeSafeDictionary.count == 0) continue;
+                    var group = _db.Current;
+                    if (group.key.IsEnabled() == false)
+                        continue;
 
-                    _array.collection = new EntityCollection<T1>(typeSafeDictionary.GetValues(out var count), count);
-                    _array.@group = new ExclusiveGroupStruct(group.Key);
+                    ITypeSafeDictionary<T1> typeSafeDictionary = @group.value as ITypeSafeDictionary<T1>;
 
+                    if (typeSafeDictionary.count == 0)
+                        continue;
+                    _array.collection = new EntityCollection<T1>(typeSafeDictionary.GetValues(out var count),
+                        typeSafeDictionary.entityIDs, count);
+                    _array.@group = group.key;
                     return true;
                 }
 
@@ -56,15 +56,15 @@ namespace Svelto.ECS
 
             public GroupCollection Current => _array;
 
-            FasterDictionary<ExclusiveGroupStruct, ITypeSafeDictionary>.FasterDictionaryKeyValueEnumerator _db; 
+            SveltoDictionaryKeyValueEnumerator<ExclusiveGroupStruct, ITypeSafeDictionary,
+                ManagedStrategy<SveltoDictionaryNode<ExclusiveGroupStruct>>, ManagedStrategy<ITypeSafeDictionary>,
+                ManagedStrategy<int>> _db;
+
             GroupCollection _array;
         }
 
-        public GroupsIterator GetEnumerator()
-        {
-            return new GroupsIterator(_db);
-        }
+        public GroupsIterator GetEnumerator() { return new GroupsIterator(_db); }
 
-        readonly EntitiesDB       _db;
+        readonly EntitiesDB _db;
     }
 }
