@@ -5,7 +5,10 @@ Real ECS framework for c\#. Enables to write encapsulated, decoupled, maintainab
 ## Svelto.ECS in pills
 Svelto.ECS is easy to start with, but full of tricks for expert users. The hardest problem to overcome is usually to shift mentality from OOP programming to ECS programming more than using the framework itself. If you want to read an ECS faq, you can check this article: https://github.com/SanderMertens/ecs-faq
 
-### Svelto.ECS at glance: 
+### Svelto.ECS at glance
+
+simplest setup:
+
 ```csharp
     public class SimpleContext
     {
@@ -72,10 +75,24 @@ your first engine executing entities behaviours:
 
 learn more about svelto on the Wiki page: https://github.com/sebas77/Svelto.ECS/wiki 
 
-## Why using Svelto.ECS with Unity?
-Svelto.ECS wasn't born just from the needs of a large team, but also as a result of years of reasoning behind software engineering applied to game development. Svelto.ECS hasn't been written just to develop faster code, it has been designed to help develop better code. Performance gains is just one of the benefits in using Svelto.ECS, as ECS is a great way to write cache-friendly code. Svelto.ECS has been developed with the idea of ECS being a paradigm and not just a pattern, letting the user shift completely away from Object Oriented Programming with consequent improvements of the code design and code maintainability. Svelto.ECS is the result of years of iteration of the ECS paradigm applied to real game development with the intent to be as foolproof as possible. Svelto.ECS has been designed to be used by a medium-size/large team working on long term projects where the cost of maintainability is relevant.
+## Svelto.ECS philosophy
+Svelto.ECS wasn't born just from the needs of a large team, but also as a result of years of reasoning behind software engineering applied to game development. Svelto.ECS hasn't been created just to write faster code, it has been designed to help developing better code. Performance gains is just one of the benefits in using Svelto.ECS, as ECS is a great way to write cache-friendly code. Svelto.ECS has been developed with the idea of ECS being a paradigm and not just a pattern, helping the user to shift away from Object Oriented Programming with consequent improvements on the code design and code maintainability. Svelto.ECS is the result of years of iteration of the ECS paradigm applied to real game development with the intent to be as foolproof as possible. Svelto.ECS has been designed to be used by a medium-size/large team working on long term projects where the cost of maintainability is relevant.
 
-_Svelto.ECS is lean, it hasn't been designed to move a whole engine from OOP to ECS, therefore it doesn't suffer from unjustifiable complexity overhead to try to solve problems that often are not linked to gameplay development. Svelto.ECS is fundamentally feature complete at this point of writing and new features in new versions are more nice to have than fundamental._
+## Is it Archetype? Is it Sparse set? No it's something else :O
+**Svelto.ECS** is loosely based on the **Archetype** idea. The main difference compared to any other Archetype-based model is that Svelto Archetypes are static, meaning that users cannot add or remove components at runtime. There are many design reasons behind this decision, including the fact that users are often not aware of the costs of structural changes.
+
+While other frameworks typically limit user freedom to avoid exposing flaws in the archetype-based concept, Svelto.ECS introduces the concept of **groups**. This is simply an explicit way for the user to define sets of entities and iterate through them as quickly as possible.
+
+**GroupCompounds** build on this idea by allowing users to change the "state"/"set"/"group" according to tags that serve effectively as adjective or state identifiers.
+
+## Why using Svelto.ECS with Unity?
+Svelto.ECS doens't use a traditional archetype model like DOTS ECS does. The novel hybrid approach based on groups instead than archetypes has been designed to allow the user to take the right decision when it comes to states management. Svelto.ECS doesn't allow archetypes to change dynamically, the user cannot add or remove components after the entity is created. Handling entities states with components can quickly lead to very intensive structural changes operations, so groups have been introduced to avoid the wild explosion of states permutations and let the user see explicitly the cost of their decisions.
+
+Filters have been added to make the handling of multiple states even more flexible by adding a new dimension to subset creation. Using filters it's possible to subset groups while avoiding structural changes (that happens when changing groups in Svelto.ECS too). DOTS engineers also realised this and consequentially introduced the new *Enableable components* which are less flexible than the Svelto.ECS filters as they implicitly tie the subsets to enabled/disabled components, while Filters in Svelto.ECS don't.
+
+Thanks to the explicit use of Groups and Filters, the Svelto user is able to find the right trade off to handle entities states.
+
+_Svelto.ECS is lean. It hasn't been designed to move a whole engine such as Unity from OOP to ECS, therefore it doesn't suffer from unjustifiable complexity overhead to try to solve problems that often are not linked to gameplay development. Svelto.ECS is fundamentally feature complete at this point of writing and new features in new versions are more nice to have than fundamental._
 
 ### Unity Compatibility
 Svelto.ECS is partially compatible with Unity 2019.3.x cycle as long as it's not used with any DOTS package (including collections). It is compatible with all the versions of Unity from 2020 and above.
@@ -84,7 +101,7 @@ Svelto.ECS is partially compatible with Unity 2019.3.x cycle as long as it's not
 Svelto.ECS is designed to take full advantange of the DOTS modules and to use specifically DOTS ECS as an engine library, through the (optional) SveltoOnDOTS wrapper. 
 
 ## Why using Svelto.ECS without Unity?
-The question is just for fun! There are so many c# game engines out there (Stride, Flax, Monogame, FlatRedBall, Evergine, UnrealCLR, UniEngine just to mention some) and Svelto.ECS is compatible with all of them! 
+There are so many c# game engines out there (Stride, Flax, Monogame, FlatRedBall, Evergine, UnrealCLR, UniEngine just to mention some) and Svelto.ECS is compatible with all of them! 
 
 ## Performance considerations
 Aside from resizing the database absolutely when necessary, all the Svelto operations are memory allocation free. Some containers may need to be preallocated (and then disposed) but those are already advanced scenarios. When using pure ECS (no EntityViewComponents) components are stored in native collections across all the platforms, which means gaining some performance from losing the managed memory checks. With pure ECS, iterating components is automatically cache-friendly.
@@ -143,12 +160,13 @@ Note: I included the IoC articles just to show how I shifted over the years from
 ## Users Generated Content \(I removed all the outdated articles, so this is a call for new ones!\)
 * [A Beginner’s Guide to Svelto.ECS (3.0) with Unity by Jiheh Ritterling](https://jiheh.medium.com/a-beginners-guide-to-svelto-ecs-3-0-with-unity-e9dbc88a2145)
 
-**Svelto Extensions**
+**Svelto Community Extensions**
 
-* [Svelto.ECS.Schema - Schema and State Machine extensions for Svelto.ECS](https://github.com/cathei/Svelto.ECS.Schema)
-* [Automatic way to control svelto engines order without having to pass in a string using attributes](https://gist.github.com/dragonslaya84/88e6bb998eda8fe4ee912f01d67feec9)
-* [Foundation for a possible platform agnostic Svelto.ECS inspector](https://github.com/akrogame/svelto-ecs-inspector)
-* [Being able to swap entities between a subset of compound tags to another subset of compound tags](https://gist.github.com/jlreymendez/c2f441aaf6ac7b5f233ecd990314e9cc)
+* [***Svelto.ECS inspector***](https://github.com/akrogame/svelto-ecs-inspector)
+* [***Svelto.ECS.Schema - Schema and State Machine extensions for Svelto.ECS***](https://github.com/cathei/Svelto.ECS.Schema)
+* [***Being able to swap entities between a subset of compound tags to another subset of compound tags***](https://gist.github.com/jlreymendez/c2f441aaf6ac7b5f233ecd990314e9cc)
+* [***Automatic way to control svelto engines order without having to pass in a string using attributes***](https://gist.github.com/dragonslaya84/88e6bb998eda8fe4ee912f01d67feec9)
+
 
 ## How to clone the repository:
 The folders Svelto.ECS and Svelto.Common, where present, are submodules pointing to the relative repositories. If you find them empty, you need to update them through the submodule command. Check some instructions here: https://github.com/sebas77/Svelto.ECS.Vanilla.Example/wiki
