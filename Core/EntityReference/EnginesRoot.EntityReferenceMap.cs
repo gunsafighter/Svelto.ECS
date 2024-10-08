@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Svelto.Common;
 using Svelto.DataStructures;
 using Svelto.DataStructures.Native;
@@ -6,7 +7,7 @@ using Svelto.ECS.Reference;
 
 namespace Svelto.ECS
 {
-    // The EntityLocatorMap provides a bidirectional map to help locate entities without using an EGID which might
+    // The EntityReferenceMap provides a bidirectional map to help locate entities without using an EGID which might
     // change at runtime. The Entity Locator map uses a reusable unique identifier struct called EntityLocator to
     // find the last known EGID from last entity submission.
     public partial class EnginesRoot
@@ -146,6 +147,7 @@ namespace Svelto.ECS
                 _egidToReferenceMap.Remove(fromGroupId);
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public EntityReference GetEntityReference(EGID egid)
             {
                 if (_egidToReferenceMap.TryGetValue(egid.groupID, out var groupMap))
@@ -153,15 +155,16 @@ namespace Svelto.ECS
                     if (groupMap.TryGetValue(egid.entityID, out var locator))
                         return locator;
 #if DEBUG && !PROFILE_SVELTO
-                    else
-                        throw new ECSException(
-                            $"Entity {egid} does not exist. Are you creating it? Try getting it from initializer.reference.");
+                    throw new ECSException(
+                        $"Entity {egid} does not exist. If you just created it, get it from initializer.reference.");
 #endif
                 }
 
-                return EntityReference.Invalid;
+                throw new ECSException(
+                    $"Entity {egid} does not exist. If you just created it, get it from initializer.reference.");
             }
             
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public SharedSveltoDictionaryNative<uint, EntityReference> GetEntityReferenceMap(ExclusiveGroupStruct groupID)
             {
                 if (_egidToReferenceMap.TryGetValue(groupID, out var groupMap) == false)
@@ -170,6 +173,7 @@ namespace Svelto.ECS
                 return groupMap;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool TryGetEGID(EntityReference reference, out EGID egid)
             {
                 egid = default;
@@ -189,6 +193,7 @@ namespace Svelto.ECS
                 return false;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public EGID GetEGID(EntityReference reference)
             {
 #if DEBUG && !PROFILE_SVELTO                
@@ -202,7 +207,6 @@ namespace Svelto.ECS
                 if (entityReferenceMapElement.version != reference.version)
                     throw new ECSException("outdated Reference");
 #endif
-
                 return entityReferenceMapElement.egid;
             }
 
@@ -244,8 +248,7 @@ namespace Svelto.ECS
             //alternatively since the groups are guaranteed to be sequential an array should be used instead
             //than a dictionary for groups. It could be a good case to implement a 4k chunk based sparseset
             
-            SharedSveltoDictionaryNative<ExclusiveGroupStruct, SharedSveltoDictionaryNative<uint, EntityReference>>
-                _egidToReferenceMap;
+            SharedSveltoDictionaryNative<ExclusiveGroupStruct, SharedSveltoDictionaryNative<uint, EntityReference>> _egidToReferenceMap;
         }
 
         EntityReferenceMap entityLocator => _entityLocator;
